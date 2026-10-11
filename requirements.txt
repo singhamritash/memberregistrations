@@ -2,5 +2,3 @@ streamlit>=1.40
 pandas>=2.2
 plotly>=5.20
 numpy>=1.26
-python-docx>=1.1
-pyttsx3>=2.90
