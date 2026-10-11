@@ -1,0 +1,31 @@
+## 1. What is this?
+  - This is a requirement to create a simple CSV file 
+
+## 3. What problem does it solve?
+  - Creates synthetic data for coding purposes 
+  
+## 4. What must it do?
+ - Create a list of 1 milliom records with the following information 
+   first_name , last_name , Date_of_Birth , SSN , member_id , email_id, relationship_code , registration_status , registration_date 
+ - Data has to be synthetic and should not be actual member information
+ 
+ - Guardrails for the information 
+   first_name - 10 byte alpha first name 
+   last_name  - 10 byte alpha last name 
+   Date_of_Birth - in format CCYY-MM-DD ( members DOB should be after 1980 and before 2010 ) 
+   SSN - dummy 10 byte SSN number 
+   member_id - Alphanumeric 10 byte 
+   email_id - use the format last_name.first_name@gmail.com 
+   relationship_code - use EE ( for employees ) , SP ( for Spouse ) 
+   registration_status - Value should be "Y" or "N" 
+   registration_date - in format CCYY-MM-DD Shoudl be in year 2026 
+   
+ - Create synthetic data for all the above values . Ramdomize the registration_status and registration_date to give a radom distribution 
+ 
+ ## 5. What should it NOT do?
+ - No refrence to any person , dead or alive 
+ - All data should be synthetic 
+
+## 5. Output 
+ - Create a downloadable CSV file 
+  

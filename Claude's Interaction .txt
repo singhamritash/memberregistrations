@@ -1,0 +1,41 @@
+Please answer these, or say “use your default” for any item and I’ll pick the one marked as my recommendation.
+
+Build and hosting
+
+Tech stack: (a) plain HTML/CSS/JS with Plotly or Chart.js for the charts, which runs in the browser, or (b) Python (Flask or Dash) with a backend that handles the 1M rows? (Recommend b, since 1M rows is about 90 MB and too heavy for the browser.)
+Run locally only, or deployed somewhere? (Recommend local only.) Answer - Use (b) , Use Streamlit to organize python code 
+Should I initialize a git repo? The folder is not one now. Answer - Yes , initiate a git repo.
+
+Master.CSV
+4. Keep all 1,000,000 rows as they are, or remove duplicates by member_id? (Recommend keep all rows and report any duplicates.) . Answer - Keep all rows 
+5. Save it to the Data folder, or to a separate output folder? Answer -Save in Data folder 
+
+Option 1: Registration stats
+6. “Month” input: pick a year-month (for example 2026-03), or pick a month across 2026? Answer - pick a year-month
+7. “Date and time”: the data has no time component. Do you want a date picker only, or a date range?  Answer - date picker only
+8. The data has registrations dated after today (Oct 11 to Dec 31, 2026). Show them as-is, or flag them as future-dated? Answer - Modify this to make dates after 1/1/2026 and before 10/1/2026 
+9. How should low and high registration days be defined? (Recommend the bottom and top 10% of days in the selected month, or more than 1 standard deviation from the mean.) Answer - use your default 
+10. Which 2D and 3D charts do you want? (Recommend 2D: bar, line, heat map. 3D: 3D bar and 3D surface.) Answer - use your default 
+11. Soft colors and the strong color for anomalies: any specific hex codes, or should I choose a blue-based palette? Answer - use your default 
+
+Option 2: Member outreach
+12. The app can’t send real email without a mail service. Should I (a) wire it to a real provider such as SMTP or SendGrid, where you supply credentials, or (b) simulate the send and log it? (Recommend b for now.) Answer - use your default 
+13. Provide the outreach templates you want, or should I draft three placeholders for you to edit? Answer - draft three placeholders  
+14. Searching by SSN puts sensitive data on screen with no login. Should SSN be masked (show only last 4 digits)? (Recommend yes.) Answer - use your default 
+15. Should lookup be exact match only? Answer - Allow partial look up 
+
+Option 3: Reporting
+16. Report formats: CSV only (as the PRD says), or also Excel or PDF? Answer - CSV only 
+17. “Registration stats in a day”: is the day chosen by a date picker? Answer - yes 
+18. “Members not registered”: all of 2026, or filtered by month? Answer - filtered by month 
+19. “Query on registration_status and month” and “query on relationship_code”: should these be combinable in one query, or separate reports? Answer - seperate reports 
+
+Deliverables
+20. Word requirements document: should I generate it from this PRD, or do you want to write it? Answer - generate it from this PRD
+21. Architecture map: an interactive HTML page (clickable nodes) is my default. Is that OK? Answer - use your default 
+22. Video: is a narrated screen recording OK, or do you want a slide-based video? Preferred length? Answer - narrated screen recording - Not more than 1 min . 
+
+Synthetic data
+23. “10 byte” names and IDs: maximum length, or fixed width? The current data is variable length.  Answer - fixed width
+
+Once you answer, I’ll build in this order: Master.CSV, the backend, the three menu options, then the Word doc, architecture map and video.

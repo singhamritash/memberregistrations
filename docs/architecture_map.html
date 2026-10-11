@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Architecture Map</title>
+<style>
+  :root {
+    --bg: #F4F9FE; --panel: #FFFFFF; --ink: #1B3A5C; --muted: #5C7A99;
+    --blue: #1F6FB2; --soft: #DCEBFA; --line: #9CC6EA; --strong: #E0242F; --warn: #FF8C1A;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: Segoe UI, Arial, sans-serif; }
+  header { padding: 18px 24px 6px; }
+  h1 { margin: 0; font-size: 22px; color: var(--blue); }
+  header p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; padding: 0 24px 12px; font-size: 13px; color: var(--muted); }
+  .legend span::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .lg-input::before { background: #FFFFFF; border: 2px solid var(--line); }
+  .lg-data::before { background: var(--soft); }
+  .lg-code::before { background: #A9CCEA; }
+  .lg-ui::before { background: var(--blue); }
+  .lg-out::before { background: #FFE3B3; }
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; padding: 0 16px 24px; }
+  .scroll { overflow-x: auto; border-radius: 12px; }
+  .canvas { position: relative; width: 1320px; min-height: 640px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+  svg.edges { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  svg.edges path { fill: none; stroke: var(--line); stroke-width: 2; }
+  svg.edges path.dashed { stroke-dasharray: 6 5; }
+  svg.edges path.active { stroke: var(--blue); stroke-width: 3; }
+  .node {
+    position: absolute; width: 170px; padding: 10px 12px; border-radius: 10px; cursor: pointer;
+    border: 2px solid var(--line); background: #FFFFFF; color: var(--ink); font-size: 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06); transition: transform .12s, box-shadow .12s;
+  }
+  .node:hover, .node:focus { outline: none; transform: translateY(-2px); box-shadow: 0 6px 14px rgba(31,111,178,0.18); }
+  .node.selected { border-color: var(--blue); border-width: 3px; }
+  .node .tag { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .node .name { font-weight: 600; margin-top: 2px; word-break: break-word; }
+  .node.input { background: #FFFFFF; }
+  .node.data { background: var(--soft); }
+  .node.code { background: #A9CCEA; color: #0F2A44; border-color: #5B9BD5; }
+  .node.ui { background: var(--blue); color: #FFFFFF; border-color: var(--blue); }
+  .node.ui .tag { color: #DCEBFA; }
+  .node.out { background: #FFE3B3; border-color: var(--warn); color: #3D2600; }
+  .node.out .tag { color: #6B4A10; }
+  .node.sub { width: 150px; font-size: 12px; background: #FFFFFF; border-color: var(--blue); }
+  .side { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; align-self: start; position: sticky; top: 16px; }
+  .side h2 { margin: 0 0 4px; font-size: 17px; color: var(--blue); }
+  .side .type { font-size: 11px; text-transform: uppercase; color: var(--muted); letter-spacing: .05em; }
+  .side p { font-size: 14px; line-height: 1.45; }
+  .side h3 { font-size: 13px; margin: 14px 0 6px; color: var(--ink); }
+  .side ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; }
+  .side a.link { color: var(--blue); cursor: pointer; text-decoration: underline; }
+  .hint { color: var(--muted); font-size: 13px; }
+  @media (max-width: 900px) {
+    .wrap { grid-template-columns: 1fr; }
+    .side { position: static; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Member Registration Tracker: Architecture Map</h1>
+  <p>Click any box to see what it does and what it connects to. Dashed lines show data that is not read by the app.</p>
+</header>
+<div class="legend">
+  <span class="lg-input">Source input</span>
+  <span class="lg-data">Data file</span>
+  <span class="lg-code">Python module</span>
+  <span class="lg-ui">User interface (Streamlit)</span>
+  <span class="lg-out">Output or document</span>
+</div>
+
+<div class="wrap">
+  <div class="scroll"><div class="canvas" id="canvas">
+    <svg class="edges" id="edges"></svg>
+  </div></div>
+  <aside class="side" id="side">
+    <div class="type">Select a box</div>
+    <h2>Architecture map</h2>
+    <p class="hint">Start with the left column (inputs), then follow the arrows to the right to see how the app works.</p>
+  </aside>
+</div>
+
+<script>
+const NODES = {
+  prd:      { col: 0, row: 0, cls: "input", tag: "Input", name: "PRD.md",
+              desc: "Product requirements, strict guidelines and the three menu options.",
+              links: ["app"], flows: "Defines requirements for app.py and the Word document." },
+  prompt:   { col: 0, row: 1, cls: "input", tag: "Input", name: "CSV creation Prompt.txt",
+              desc: "Rules for the synthetic data: field formats, date ranges and fixed widths.",
+              links: ["gen"], flows: "Read by generate_master.py rules (encoded in code)." },
+  parts:    { col: 0, row: 2.5, cls: "data", tag: "Data (not used by app)", name: "Data/members_1M_part00 to 03.csv",
+              desc: "The original four 250,000-row files. They are kept unchanged. The app reads Master.csv only.",
+              links: [], flows: "Superseded by the regenerated Master.csv." , dashed: true },
+  gen:      { col: 1, row: 1, cls: "code", tag: "Python script", name: "generate_master.py",
+              desc: "Builds 1,000,000 synthetic records with fixed 10-character names, DOB 1980 to 2009, and registration dates from 2026-01-01 to 2026-09-30. Writes Master.csv.",
+              links: ["master"], flows: "Writes Data/Master.csv." },
+  master:   { col: 2, row: 1, cls: "data", tag: "Data file", name: "Data/Master.csv",
+              desc: "The single combined dataset: 1,000,000 rows and 9 columns. All queries run against this file.",
+              links: ["store"], flows: "Loaded once and cached by data_store.py." },
+  store:    { col: 3, row: 1, cls: "code", tag: "Python module", name: "data_store.py",
+              desc: "Loads Master.csv (cached), builds daily and monthly counts, runs member search and the report queries.",
+              links: ["app", "charts", "outreach"], flows: "Provides data to the UI, charts and outreach." },
+  charts:   { col: 3, row: 2.5, cls: "code", tag: "Python module", name: "charts.py",
+              desc: "Builds the line chart, heat map, 3D bar, 3D surface and the 3D circular chart (radial_3d) with Plotly. radial_3d_html embeds the circular chart with Plotly.js and a day details panel. Applies soft blue and strong anomaly colours.",
+              links: ["app", "plotly"], flows: "Figures are shown in Option 1. The circular chart is rendered by Plotly.js." },
+  plotly:   { col: 4, row: 4, cls: "input", tag: "External library (CDN)", name: "Plotly.js 2.35.2",
+              desc: "Browser charting library loaded from cdn.jsdelivr.net. Draws the 3D circular chart and handles hover and click for the details panel.",
+              links: [], flows: "Loaded inside the embedded circular chart." },
+  outreach: { col: 3, row: 3.5, cls: "code", tag: "Python module", name: "outreach.py",
+              desc: "Email templates, SSN masking and the simulated-send log.",
+              links: ["app", "log"], flows: "Templates and masking are used by Option 2. Sends are logged." },
+  app:      { col: 4, row: 1, cls: "ui", tag: "Streamlit app", name: "app.py",
+              desc: "The web page. A left menu with three options and a right-hand page for each option.",
+              links: ["opt1", "opt2", "opt3", "cfg"], flows: "Calls data_store, charts and outreach." },
+  cfg:      { col: 4, row: 2.8, cls: "input", tag: "Config", name: ".streamlit/config.toml",
+              desc: "Light blue theme and telemetry off.",
+              links: ["app"], flows: "Sets the theme used by app.py." },
+  opt1:     { col: 5, row: 0, cls: "sub", tag: "Option 1", name: "View registration stats",
+              desc: "Pick a month. All charts on one page: interactive 3D circular chart with a 'go to day' slider and details panel, line chart, heat map, 3D bar and 3D surface. Shows low and high days and a CSV download of daily stats.",
+              links: [], flows: "Uses data_store.month_daily and charts.*" , sub: true },
+  opt2:     { col: 5, row: 1, cls: "sub", tag: "Option 2", name: "Member outreach",
+              desc: "Search by member_id or SSN (partial). Shows masked details, a template and an editable message. Send is simulated.",
+              links: ["log"], flows: "Uses data_store.search_members and outreach.*", sub: true },
+  opt3:     { col: 5, row: 2, cls: "sub", tag: "Option 3", name: "Reporting",
+              desc: "Five separate reports, each downloadable as CSV: not registered by month, stats for a day, last 6 months spread, status and month query, relationship code query.",
+              links: ["csv"], flows: "Uses data_store report functions and charts.monthly_bar", sub: true },
+  log:      { col: 6, row: 3.5, cls: "out", tag: "Output", name: "outreach_log.csv",
+              desc: "One row per simulated send: timestamp, member_id, email, subject, message and delivery status (SIMULATED).",
+              links: [], flows: "Appended on each send in Option 2." },
+  csv:      { col: 6, row: 2, cls: "out", tag: "Output", name: "Downloaded CSV reports",
+              desc: "CSV files downloaded from Option 1 (daily stats) and Option 3 (all reports).",
+              links: [], flows: "Created in the browser download folder." },
+  docs:     { col: 6, row: 0.2, cls: "out", tag: "Document", name: "docs/Project_Requirements.docx",
+              desc: "Word requirements document generated from the PRD and the answers to the clarifying questions.",
+              links: [], flows: "Describes the full project." },
+  map:      { col: 6, row: 1, cls: "out", tag: "Document", name: "docs/architecture_map.html",
+              desc: "This page. Interactive architecture map of the code.",
+              links: [], flows: "Describes all modules." },
+  video:    { col: 6, row: 1.8, cls: "out", tag: "Document", name: "docs/project_walkthrough.mp4",
+              desc: "Narrated screen recording of the app, about 1 minute.",
+              links: [], flows: "Shows the three options in use." }
+};
+
+// Edge list: which links to draw. Built from each node's links, plus the document links.
+const EXTRA_EDGES = [["app", "docs"], ["app", "map"], ["app", "video"]];
+
+const canvas = document.getElementById("canvas");
+const svg = document.getElementById("edges");
+const side = document.getElementById("side");
+const COL_W = 176, NODE_H_GAP = 96, PAD_X = 12, PAD_Y = 16;
+let selected = null;
+const els = {};
+
+function place() {
+  // Column spacing is computed from the canvas width, so the layout fits on screen.
+  const spacing = 190;
+  Object.entries(NODES).forEach(([id, n]) => {
+    const el = els[id];
+    const w = n.sub ? 150 : 170;
+    el.style.left = (PAD_X + n.col * spacing + (170 - w) / 2) + "px";
+    el.style.top = (PAD_Y + n.row * NODE_H_GAP) + "px";
+  });
+  canvas.style.height = (PAD_Y * 2 + 4.6 * NODE_H_GAP + 90) + "px";
+  drawEdges();
+}
+
+function center(el) {
+  const r = el.getBoundingClientRect();
+  const c = canvas.getBoundingClientRect();
+  return {
+    x: r.left - c.left + r.width / 2,
+    y: r.top - c.top + r.height / 2,
+    left: r.left - c.left, right: r.right - c.left, top: r.top - c.top, bottom: r.bottom - c.top,
+  };
+}
+
+function edgePairs() {
+  const pairs = [];
+  Object.entries(NODES).forEach(([from, n]) => n.links.forEach(to => pairs.push([from, to])));
+  EXTRA_EDGES.forEach(p => pairs.push(p));
+  return pairs;
+}
+
+function drawEdges() {
+  svg.setAttribute("viewBox", `0 0 ${canvas.clientWidth} ${canvas.clientHeight}`);
+  svg.innerHTML = "";
+  edgePairs().forEach(([a, b]) => {
+    if (!els[a] || !els[b]) return;
+    const A = center(els[a]), B = center(els[b]);
+    const sx = A.right, sy = A.y, ex = B.left, ey = B.y;
+    let d;
+    if (ex > sx) {
+      const mx = (sx + ex) / 2;
+      d = `M${sx},${sy} C${mx},${sy} ${mx},${ey} ${ex},${ey}`;
+    } else {
+      // Backward or same-column link: route beneath the boxes.
+      const my = Math.max(A.bottom, B.bottom) + 24;
+      d = `M${A.x},${A.bottom} C${A.x},${my} ${B.x},${my} ${B.x},${B.bottom}`;
+    }
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", d);
+    const dashed = NODES[a] && NODES[a].dashed;
+    if (dashed) path.setAttribute("class", "dashed");
+    if (selected && (a === selected || b === selected)) path.setAttribute("class", (dashed ? "dashed " : "") + "active");
+    svg.appendChild(path);
+  });
+}
+
+function show(id) {
+  const n = NODES[id];
+  selected = id;
+  Object.entries(els).forEach(([k, el]) => el.classList.toggle("selected", k === id));
+  const linkedOut = n.links.map(l => `<li><a class="link" data-id="${l}">${NODES[l].name}</a></li>`).join("");
+  const linkedIn = Object.entries(NODES).filter(([, m]) => m.links.includes(id))
+    .map(([k, m]) => `<li><a class="link" data-id="${k}">${m.name}</a></li>`).join("");
+  side.innerHTML = `
+    <div class="type">${n.tag}</div>
+    <h2>${n.name}</h2>
+    <p>${n.desc}</p>
+    <h3>What it does with its neighbours</h3>
+    <p>${n.flows}</p>
+    <h3>Feeds into</h3>
+    <ul>${linkedOut || "<li>Nothing (end of flow)</li>"}</ul>
+    <h3>Fed by</h3>
+    <ul>${linkedIn || "<li>Nothing (start of flow)</li>"}</ul>`;
+  side.querySelectorAll("a.link").forEach(a => a.addEventListener("click", () => show(a.dataset.id)));
+  drawEdges();
+}
+
+Object.entries(NODES).forEach(([id, n]) => {
+  const el = document.createElement("div");
+  el.className = `node ${n.cls}`;
+  el.tabIndex = 0;
+  el.innerHTML = `<div class="tag">${n.tag}</div><div class="name">${n.name}</div>`;
+  el.addEventListener("click", () => show(id));
+  el.addEventListener("keydown", e => { if (e.key === "Enter") show(id); });
+  canvas.appendChild(el);
+  els[id] = el;
+});
+
+window.addEventListener("resize", place);
+place();
+</script>
+</body>
+</html>
